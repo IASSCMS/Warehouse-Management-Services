@@ -4,14 +4,7 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="9e15e39a-ef16-4bba-825a-8754061e14a1" name="Changes" comment="fix">
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Project/settings.py" beforeDir="false" afterPath="$PROJECT_DIR$/Project/settings.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/warehouse/models.py" beforeDir="false" afterPath="$PROJECT_DIR$/warehouse/models.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/warehouse/serializers.py" beforeDir="false" afterPath="$PROJECT_DIR$/warehouse/serializers.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/warehouse/urls.py" beforeDir="false" afterPath="$PROJECT_DIR$/warehouse/urls.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/warehouse/views.py" beforeDir="false" afterPath="$PROJECT_DIR$/warehouse/views.py" afterDir="false" />
-    </list>
+    <list default="true" id="9e15e39a-ef16-4bba-825a-8754061e14a1" name="Changes" comment="warehouse servises created" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -109,7 +102,7 @@
       <updated>1745484691397</updated>
       <workItem from="1745484692476" duration="25938000" />
       <workItem from="1745562005045" duration="15000" />
-      <workItem from="1745562478137" duration="43347000" />
+      <workItem from="1745562478137" duration="43655000" />
     </task>
     <task id="LOCAL-00001" summary="wherehouse created">
       <option name="closed" value="true" />
@@ -127,7 +120,15 @@
       <option name="project" value="LOCAL" />
       <updated>1745995630019</updated>
     </task>
-    <option name="localTasksCounter" value="3" />
+    <task id="LOCAL-00003" summary="warehouse servises created">
+      <option name="closed" value="true" />
+      <created>1746031004658</created>
+      <option name="number" value="00003" />
+      <option name="presentableId" value="LOCAL-00003" />
+      <option name="project" value="LOCAL" />
+      <updated>1746031004658</updated>
+    </task>
+    <option name="localTasksCounter" value="4" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -136,6 +137,7 @@
   <component name="VcsManagerConfiguration">
     <MESSAGE value="wherehouse created" />
     <MESSAGE value="fix" />
-    <option name="LAST_COMMIT_MESSAGE" value="fix" />
+    <MESSAGE value="warehouse servises created" />
+    <option name="LAST_COMMIT_MESSAGE" value="warehouse servises created" />
   </component>
 </project>
