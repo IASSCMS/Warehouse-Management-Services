@@ -6,6 +6,11 @@ class InventorySerializer(serializers.ModelSerializer):
         model = Inventory
         fields = ('id', 'product_sku', 'product_name', 'quantity')
 
+class InventoryCreateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Inventory
+        fields = ('product_sku', 'product_name', 'quantity')
+
 class WarehouseSerializer(serializers.ModelSerializer):
     inventories = InventorySerializer(many=True, read_only=True)
 
