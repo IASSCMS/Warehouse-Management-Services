@@ -13,9 +13,10 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 import os
 from pathlib import Path
 from dotenv import load_dotenv
+import dj_database_url
 
-# Explicitly set the path to the .env file
-load_dotenv(os.path.join(os.path.dirname(__file__), '.env'))
+# # Explicitly set the path to the .env file
+load_dotenv(os.path.join(os.path.dirname(__file__),'..', '.env'))
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -42,11 +43,11 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-
-    'product',  # Custom app
-    'warehouse',  # Custom app
+    'product',
+    'warehouse',   
 
     'rest_framework',  # Django REST framework
+    'django.contrib.postgres',
 ]
 
 MIDDLEWARE = [
@@ -82,17 +83,16 @@ WSGI_APPLICATION = 'warehouse_managment.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': os.getenv('warehouse_inventory'),
-        'USER': os.getenv('POSTGRES_USER', 'admin'),
-        'PASSWORD': os.getenv('POSTGRES_PASSWORD', 'admin'),
-        'HOST': os.getenv('POSTGRES_HOST', 'localhost'),
-        'PORT': os.getenv('POSTGRES_PORT', '5432'),
-    }
-}
 
+
+# Database configuration
+DATABASES = {
+    'default': dj_database_url.config(
+        default=os.getenv('DATABASE_URL'),
+        conn_max_age=600,
+        conn_health_checks=True,
+    )
+}
 
 # Password validation
 # https://docs.djangoproject.com/en/5.2/ref/settings/#auth-password-validators

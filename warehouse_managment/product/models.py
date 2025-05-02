@@ -1,11 +1,32 @@
 from django.db import models
 
-class Product(models.Model):
-    name = models.CharField(max_length=255)
-    sku = models.CharField(max_length=100, unique=True)
+from django.db import models
+
+class ProductCategory(models.Model):
+    category_name = models.CharField(max_length=50, unique=True)
     description = models.TextField(blank=True)
-    price = models.DecimalField(max_digits=10, decimal_places=2)
+    class Meta:
+        db_table = 'product_category'
+
+class Product(models.Model):
+    product_name = models.CharField(max_length=60)
+    unit_price = models.DecimalField(max_digits=10, decimal_places=2)
+    category = models.ForeignKey(ProductCategory, on_delete=models.CASCADE)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = 'product'
+
+class SupplierProduct(models.Model):
+    supplier_id = models.IntegerField()
+    product = models.ForeignKey(Product, on_delete=models.CASCADE)
+    maximum_capacity = models.IntegerField()
+    supplier_price = models.DecimalField(max_digits=10, decimal_places=2)
+    lead_time_days = models.IntegerField(blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
-    def __str__(self):
-        return self.name
+    class Meta:
+        db_table = 'supplier_product'
+        unique_together = (('supplier_id', 'product'),)
+

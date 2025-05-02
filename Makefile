@@ -3,6 +3,9 @@ PIP=venv/bin/pip
 MANAGE=python manage.py
 DIR= warehouse_managment
 
+# Load environment variables from warehouse_managment/.env
+include warehouse_managment/.env
+
 .PHONY: run setup migrate createsuperuser test shell
 
 help:
@@ -76,3 +79,6 @@ db-clean:
 
 db-restart:
 	cd database && docker-compose restart
+
+db-psql:
+	cd database && docker-compose exec psql-client psql $(DATABASE_URL)

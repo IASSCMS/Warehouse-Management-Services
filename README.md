@@ -49,17 +49,11 @@ pip install -r requirements.txt
 
 Make sure it includes:
 ```env
-POSTGRES_DB=warehouse_inventory
-POSTGRES_USER=admin
-POSTGRES_PASSWORD=admin
-POSTGRES_PORT=5432
-POSTGRES_HOST=localhost
-
 PGADMIN_DEFAULT_EMAIL=admin@admin.com
 PGADMIN_DEFAULT_PASSWORD=admin
 ```
 
-2. Rename `.env.example` in `warehouse` dir into `.env`
+2. Rename `.env.example` in `warehouse_managment` dir into `.env`
 
 Make sure it includes:
 ```env
@@ -68,11 +62,8 @@ DJANGO_SECRET_KEY=your-secret-key-here
 DJANGO_DEBUG=True
 DJANGO_ALLOWED_HOSTS=localhost,127.0.0.1
 
-POSTGRES_DB=warehouse_inventory
-POSTGRES_USER=admin
-POSTGRES_PASSWORD=admin
-POSTGRES_PORT=5432
-POSTGRES_HOST=localhost
+# PostgreSQL
+DATABASE_URL=
 ```
 
 ---
@@ -83,40 +74,16 @@ POSTGRES_HOST=localhost
 make db-up
 ```
 
-Wait a few seconds for the DB to fully initialize.
-
 ---
 
-### 6️⃣ Run Migrations
-
-```bash
-make migrate
-```
-
----
-
-### 7️⃣ Seed the Database with Sample Data (Optional for sample data)
-
-```bash
-make seed
-```
-
-This seeds:
-- Products
-- Warehouses
-- Inventory
-
----
-
-### 8️⃣ Run the Django Development Server
+### 6️⃣ Run the Django Development Server
 
 ```bash
 make run
 ```
 
-- Visit: [http://localhost:8000/api/product/products/](http://localhost:8000/api/product/products/)
-- Visit: [http://localhost:8000/api/warehouse/warehouses/](http://localhost:8000/api/warehouse/warehouses/)
-- Visit: [http://localhost:8000/api/warehouse/inventory/](http://localhost:8000/api/warehouse/inventory/)
+- Visit: [http://localhost:8000/api/product/](http://localhost:8000/api/products/)
+- Visit: [http://localhost:8000/api/warehouse/](http://localhost:8000/api/warehouse/)
 
 ---
 
@@ -129,11 +96,11 @@ make run
 3. Register new server:
    - Right click on `Servers` , then `Register` > `Server...`
    - **Name:** `warehouse`
-   - **Host Name/ address** - `database`
-   - **Port:** `5432`
-   - **Username:** `admin`
-   - **Password:** `admin`
-   - **Database:** `warehouse_inventory`
+   - Get the below details from the DATABASE_URL
+   - **Host Name/ address** - `_`
+   - **Port:** `_`
+   - **Username:** `_`
+   - **Password:** `_`
 
 ---
 
@@ -143,7 +110,7 @@ make run
 make db-up         # Start PostgreSQL (via Docker)
 make db-down       # Stop database container
 make migrate       # Run Django migrations
-make seed          # Seed database with sample data
+make db-psql       # Run psql shel
 make run           # Start Django dev server
 make db-clean      # Reset database (use with caution)
 ```
@@ -163,4 +130,5 @@ Then access the Django admin: [http://localhost:8000/admin/](http://localhost:80
 ## 🧹 Clean Up
 
 ```bash
-make db-clean```
+make db-clean
+```
