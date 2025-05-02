@@ -1,10 +1,12 @@
-from django.urls import path
-from . import views
+from django.urls import path, include
+from rest_framework.routers import DefaultRouter
+from .views import WarehouseViewSet, WarehouseInventoryViewSet, InventoryTransactionViewSet
+
+router = DefaultRouter()
+router.register(r'warehouses', WarehouseViewSet)
+router.register(r'inventory', WarehouseInventoryViewSet)
+router.register(r'transactions', InventoryTransactionViewSet)
 
 urlpatterns = [
-    path("", views.root, name="warehouse_root"),
-    path('warehouses/', views.warehouse_list, name='warehouse-list'),
-    path('warehouses/<int:pk>/', views.warehouse_detail, name='warehouse-detail'),
-    path('inventory/', views.inventory_list, name='inventory-list'),
-    path('inventory/<int:pk>/', views.inventory_detail, name='inventory-detail'),
+    path('', include(router.urls)),
 ]

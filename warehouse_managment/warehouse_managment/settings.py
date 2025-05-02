@@ -42,11 +42,11 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-
-    'product',  # Custom app
-    'warehouse',  # Custom app
+    'product',
+    'warehouse',   
 
     'rest_framework',  # Django REST framework
+    'django.contrib.postgres',
 ]
 
 MIDDLEWARE = [
@@ -82,17 +82,21 @@ WSGI_APPLICATION = 'warehouse_managment.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': os.getenv('warehouse_inventory'),
-        'USER': os.getenv('POSTGRES_USER', 'admin'),
-        'PASSWORD': os.getenv('POSTGRES_PASSWORD', 'admin'),
-        'HOST': os.getenv('POSTGRES_HOST', 'localhost'),
-        'PORT': os.getenv('POSTGRES_PORT', '5432'),
-    }
-}
+import os
+from dotenv import load_dotenv
+import dj_database_url
 
+# Load environment variables
+load_dotenv()
+
+# Database configuration
+DATABASES = {
+    'default': dj_database_url.config(
+        default=os.getenv('DATABASE_URL'),
+        conn_max_age=600,
+        conn_health_checks=True,
+    )
+}
 
 # Password validation
 # https://docs.djangoproject.com/en/5.2/ref/settings/#auth-password-validators
