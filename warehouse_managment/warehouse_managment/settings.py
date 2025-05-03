@@ -44,7 +44,8 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'product',
-    'warehouse',   
+    'warehouse',  
+    'demo', 
 
     'rest_framework',  # Django REST framework
     'django.contrib.postgres',
