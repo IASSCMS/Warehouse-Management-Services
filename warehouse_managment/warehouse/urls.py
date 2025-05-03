@@ -5,6 +5,7 @@ from .views import (
     WarehouseInventoryViewSet,
     InventoryTransactionViewSet,
     SupplierInventoryView,
+    MarkDeliveryReceivedView,
 )
 
 router = DefaultRouter()
@@ -15,4 +16,6 @@ router.register(r'transactions', InventoryTransactionViewSet)
 urlpatterns = [
     path('', include(router.urls)),
     path('supplier-inventory/', SupplierInventoryView.as_view(), name='supplier-inventory'),
+    path('delivery-received/', MarkDeliveryReceivedView.as_view()),
+
 ]

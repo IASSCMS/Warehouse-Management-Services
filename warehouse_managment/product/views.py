@@ -2,8 +2,10 @@ from rest_framework.response import Response
 from rest_framework.decorators import api_view
 from rest_framework import status
 from rest_framework.views import APIView  # ✅ Add this
-from .models import Product, SupplierProduct  # ✅ Add SupplierProduct
-from .serializers import ProductSerializer
+from .models import ProductCategory, Product, SupplierProduct
+from .serializers import ProductCategorySerializer, ProductSerializer, SupplierProductSerializer
+from rest_framework import viewsets
+
 
 @api_view(['GET'])
 def root(request):
@@ -47,3 +49,15 @@ class UpdateSupplierProductView(APIView):
             return Response({"status": "success"})
         except SupplierProduct.DoesNotExist:
             return Response({"error": "SupplierProduct not found"}, status=404)
+
+class ProductCategoryViewSet(viewsets.ModelViewSet):
+    queryset = ProductCategory.objects.all()
+    serializer_class = ProductCategorySerializer
+
+class ProductViewSet(viewsets.ModelViewSet):
+    queryset = Product.objects.all()
+    serializer_class = ProductSerializer
+
+class SupplierProductViewSet(viewsets.ModelViewSet):
+    queryset = SupplierProduct.objects.all()
+    serializer_class = SupplierProductSerializer
