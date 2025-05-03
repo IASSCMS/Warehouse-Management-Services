@@ -1,11 +1,10 @@
 from rest_framework.response import Response
 from rest_framework.decorators import api_view
 from rest_framework import status
-from rest_framework.views import APIView  # ✅ Add this
+from rest_framework.views import APIView  
 from .models import ProductCategory, Product, SupplierProduct
 from .serializers import ProductCategorySerializer, ProductSerializer, SupplierProductSerializer
 from rest_framework import viewsets
-
 
 @api_view(['GET'])
 def root(request):
@@ -36,19 +35,25 @@ def product_detail(request, pk):
     serializer = ProductSerializer(product)
     return Response(serializer.data)
 
+
+
 class UpdateSupplierProductView(APIView):
     def post(self, request):
         supplier_id = request.data.get('supplier_id')
         product_id = request.data.get('product_id')
         new_capacity = request.data.get('maximum_capacity')
 
+        if not all([supplier_id, product_id, new_capacity]):
+            return Response({"error": "Missing fields"}, status=400)
+
         try:
             sp = SupplierProduct.objects.get(supplier_id=supplier_id, product_id=product_id)
             sp.maximum_capacity = new_capacity
             sp.save()
-            return Response({"status": "success"})
+            return Response({"status": "success"}, status=200)
         except SupplierProduct.DoesNotExist:
             return Response({"error": "SupplierProduct not found"}, status=404)
+
 
 class ProductCategoryViewSet(viewsets.ModelViewSet):
     queryset = ProductCategory.objects.all()
@@ -61,3 +66,5 @@ class ProductViewSet(viewsets.ModelViewSet):
 class SupplierProductViewSet(viewsets.ModelViewSet):
     queryset = SupplierProduct.objects.all()
     serializer_class = SupplierProductSerializer
+    
+

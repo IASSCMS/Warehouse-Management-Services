@@ -3,3 +3,5 @@ djangorestframework
 psycopg2-binary
 python-dotenv
 dj-database-url
+Faker>=37.1.0
+requests
