@@ -12,7 +12,7 @@ router.register(r'transactions', InventoryTransactionViewSet)
 
 urlpatterns = [
     path('', include(router.urls)),
-    path('mark-delivery/', MarkDeliveryReceivedView.as_view()),
-    path('supplier-stock/', SupplierInventoryView.as_view()),
+    path('mark-delivery-received/', MarkDeliveryReceivedView.as_view(), name='mark-delivery'),
+    path('supplier-inventory/', SupplierInventoryView.as_view(), name='supplier-inventory'),
     path('supplier-dashboard/', SupplierDashboardView.as_view()),
 ]
