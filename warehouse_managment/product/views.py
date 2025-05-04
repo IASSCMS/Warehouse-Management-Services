@@ -97,7 +97,14 @@ def update_supplier_product(request):
 
 
 @api_view(['GET'])
-def product_stock_summary(request, product_id):
+def product_stock_summary(request, sku_code):
+    
+    # Ensure SKU format is valid (e.g., SKU001)
+    if not sku_code.startswith("SKU") or not sku_code[3:].isdigit():
+        return Response({'error': 'Invalid SKU format'}, status=400)
+
+    product_id = int(sku_code[3:])  # SKU001 → 1
+    
     try:
         product = Product.objects.get(id=product_id)
     except Product.DoesNotExist:

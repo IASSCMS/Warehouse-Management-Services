@@ -26,5 +26,5 @@ urlpatterns = [
     path('supplier-products/update/', update_supplier_product, name='update-supplier-product'),
     
     # Product count endpoint
-    path('product-stock-summary/<int:product_id>/', product_stock_summary), 
+    path('product-stock-summary/<str:sku_code>/', product_stock_summary),
 ]
