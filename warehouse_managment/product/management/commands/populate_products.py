@@ -7,8 +7,7 @@ class Command(BaseCommand):
 
     def handle(self, *args, **kwargs):
         category_names = [
-            'Cinnamon', 'Pepper', 'Cardamom', 'Cloves', 'Nutmeg',
-            'Ginger', 'Turmeric', 'Coriander', 'Mustard', 'Chili'
+            'Cinnamon', 'Pepper', 'Cardamom', 'Chili'
         ]
 
         self.stdout.write("Creating categories...")
@@ -20,9 +19,9 @@ class Command(BaseCommand):
             )
             categories.append(cat)
 
-        self.stdout.write("Creating 1000 products...")
+        self.stdout.write("Creating 10 products...")
         Product.objects.all().delete()
-        for i in range(1000):
+        for i in range(10):
             category = random.choice(categories)
             Product.objects.create(
                 product_name=f"{category.category_name} Product {i+1}",
@@ -30,4 +29,4 @@ class Command(BaseCommand):
                 category=category
             )
 
-        self.stdout.write(self.style.SUCCESS('✅ Seeded 10 categories and 1000 products!'))
+        self.stdout.write(self.style.SUCCESS('✅ Seeded 4 categories and 10 products!'))

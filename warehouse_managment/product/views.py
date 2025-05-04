@@ -1,10 +1,10 @@
-from rest_framework.response import Response
 from rest_framework.decorators import api_view
+from rest_framework.response import Response
 from rest_framework import status
-from rest_framework.views import APIView  
 from .models import ProductCategory, Product, SupplierProduct
 from .serializers import ProductCategorySerializer, ProductSerializer, SupplierProductSerializer
-from rest_framework import viewsets
+from django.db.models import Sum
+from warehouse.models import WarehouseInventory
 
 @api_view(['GET'])
 def root(request):
@@ -13,6 +13,9 @@ def root(request):
     """
     return Response({"message": "Welcome to the Product Management System!"}, status=status.HTTP_200_OK)
 
+# -------------------------------
+# PRODUCT APIS
+# -------------------------------
 @api_view(['GET'])
 def product_list(request):
     """
@@ -31,40 +34,80 @@ def product_detail(request, pk):
         product = Product.objects.get(pk=pk)
     except Product.DoesNotExist:
         return Response({'error': 'Product not found'}, status=status.HTTP_404_NOT_FOUND)
-    
+
     serializer = ProductSerializer(product)
     return Response(serializer.data)
 
+# -------------------------------
+# PRODUCT CATEGORY APIS
+# -------------------------------
+@api_view(['GET'])
+def category_list(request):
+    """
+    List all product categories.
+    """
+    categories = ProductCategory.objects.all()
+    serializer = ProductCategorySerializer(categories, many=True)
+    return Response(serializer.data)
+
+@api_view(['GET'])
+def category_detail(request, pk):
+    """
+    Retrieve a single category by ID.
+    """
+    try:
+        category = ProductCategory.objects.get(pk=pk)
+    except ProductCategory.DoesNotExist:
+        return Response({'error': 'Category not found'}, status=status.HTTP_404_NOT_FOUND)
+
+    serializer = ProductCategorySerializer(category)
+    return Response(serializer.data)
+
+# -------------------------------
+# SUPPLIER PRODUCT APIS
+# -------------------------------
+@api_view(['GET'])
+def supplier_product_list(request):
+    """
+    List all supplier products.
+    """
+    sp = SupplierProduct.objects.all()
+    serializer = SupplierProductSerializer(sp, many=True)
+    return Response(serializer.data)
+
+@api_view(['POST'])
+def update_supplier_product(request):
+    """
+    Update maximum_capacity of a SupplierProduct.
+    """
+    supplier_id = request.data.get('supplier_id')
+    product_id = request.data.get('product_id')
+    new_capacity = request.data.get('maximum_capacity')
+
+    if not all([supplier_id, product_id, new_capacity]):
+        return Response({"error": "Missing fields"}, status=400)
+
+    try:
+        sp = SupplierProduct.objects.get(supplier_id=supplier_id, product_id=product_id)
+        sp.maximum_capacity = new_capacity
+        sp.save()
+        return Response({"status": "success"}, status=200)
+    except SupplierProduct.DoesNotExist:
+        return Response({"error": "SupplierProduct not found"}, status=404)
 
 
-class UpdateSupplierProductView(APIView):
-    def post(self, request):
-        supplier_id = request.data.get('supplier_id')
-        product_id = request.data.get('product_id')
-        new_capacity = request.data.get('maximum_capacity')
+@api_view(['GET'])
+def product_stock_summary(request, product_id):
+    try:
+        product = Product.objects.get(id=product_id)
+    except Product.DoesNotExist:
+        return Response({'error': 'Product not found'}, status=status.HTTP_404_NOT_FOUND)
 
-        if not all([supplier_id, product_id, new_capacity]):
-            return Response({"error": "Missing fields"}, status=400)
+    total_stock = WarehouseInventory.objects.filter(product_id=product_id).aggregate(
+        total=Sum('quantity')
+    )['total'] or 0
 
-        try:
-            sp = SupplierProduct.objects.get(supplier_id=supplier_id, product_id=product_id)
-            sp.maximum_capacity = new_capacity
-            sp.save()
-            return Response({"status": "success"}, status=200)
-        except SupplierProduct.DoesNotExist:
-            return Response({"error": "SupplierProduct not found"}, status=404)
-
-
-class ProductCategoryViewSet(viewsets.ModelViewSet):
-    queryset = ProductCategory.objects.all()
-    serializer_class = ProductCategorySerializer
-
-class ProductViewSet(viewsets.ModelViewSet):
-    queryset = Product.objects.all()
-    serializer_class = ProductSerializer
-
-class SupplierProductViewSet(viewsets.ModelViewSet):
-    queryset = SupplierProduct.objects.all()
-    serializer_class = SupplierProductSerializer
-    
-
+    return Response({
+        "product_name": product.product_name,
+        "current_stock": float(total_stock)
+    }, status=status.HTTP_200_OK)

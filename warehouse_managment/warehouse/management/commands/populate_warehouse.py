@@ -15,20 +15,23 @@ class Command(BaseCommand):
         warehouse2, _ = Warehouse.objects.get_or_create(
             location_x="7.2906° N", location_y="80.6337° E", warehouse_name="Kandy Depot"
         )
+        warehouse3, _ = Warehouse.objects.get_or_create(
+            location_x="7.0032° N", location_y="80.1102° E", warehouse_name="Kurunegala Rock"
+        )
 
         # Assign random inventory to each product from each supplier
         products = Product.objects.all()
 
         for product in products:
             for supplier_id in [101, 102]:
-                for warehouse in [warehouse1, warehouse2]:
+                for warehouse in [warehouse1, warehouse2, warehouse3]:
                     WarehouseInventory.objects.update_or_create(
                         warehouse=warehouse,
                         product=product,
                         supplier_id=supplier_id,
                         defaults={
-                            'quantity': Decimal(random.uniform(100, 300)).quantize(Decimal("0.01")),
-                            'minimum_stock_level': Decimal("50.00")
+                            'quantity': Decimal(random.uniform(100000, 400000)),
+                            'minimum_stock_level': Decimal("100000.00")
                         }
                     )
 
