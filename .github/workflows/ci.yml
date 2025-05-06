@@ -26,4 +26,4 @@ jobs:
     - name: Run Django Tests
       working-directory: ./warehouse_managment
       run: |
-        python3 manage.py test product/tests warehouse_managment/tests --keepdb
+        python manage.py test product/tests warehouse_managment/tests --keepdb
