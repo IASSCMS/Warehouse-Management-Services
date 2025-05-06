@@ -1,17 +1,120 @@
-from django.shortcuts import render
-
-from rest_framework import viewsets
+from rest_framework.decorators import api_view
+from rest_framework.response import Response
+from rest_framework import status
 from .models import ProductCategory, Product, SupplierProduct
 from .serializers import ProductCategorySerializer, ProductSerializer, SupplierProductSerializer
+from django.db.models import Sum
+from warehouse.models import WarehouseInventory
 
-class ProductCategoryViewSet(viewsets.ModelViewSet):
-    queryset = ProductCategory.objects.all()
-    serializer_class = ProductCategorySerializer
+@api_view(['GET'])
+def root(request):
+    """
+    Root endpoint for the product management system.
+    """
+    return Response({"message": "Welcome to the Product Management System!"}, status=status.HTTP_200_OK)
 
-class ProductViewSet(viewsets.ModelViewSet):
-    queryset = Product.objects.all()
-    serializer_class = ProductSerializer
+# -------------------------------
+# PRODUCT APIS
+# -------------------------------
+@api_view(['GET'])
+def product_list(request):
+    """
+    List all products.
+    """
+    products = Product.objects.all()
+    serializer = ProductSerializer(products, many=True)
+    return Response(serializer.data)
 
-class SupplierProductViewSet(viewsets.ModelViewSet):
-    queryset = SupplierProduct.objects.all()
-    serializer_class = SupplierProductSerializer
+@api_view(['GET'])
+def product_detail(request, pk):
+    """
+    Retrieve a product by ID.
+    """
+    try:
+        product = Product.objects.get(pk=pk)
+    except Product.DoesNotExist:
+        return Response({'error': 'Product not found'}, status=status.HTTP_404_NOT_FOUND)
+
+    serializer = ProductSerializer(product)
+    return Response(serializer.data)
+
+# -------------------------------
+# PRODUCT CATEGORY APIS
+# -------------------------------
+@api_view(['GET'])
+def category_list(request):
+    """
+    List all product categories.
+    """
+    categories = ProductCategory.objects.all()
+    serializer = ProductCategorySerializer(categories, many=True)
+    return Response(serializer.data)
+
+@api_view(['GET'])
+def category_detail(request, pk):
+    """
+    Retrieve a single category by ID.
+    """
+    try:
+        category = ProductCategory.objects.get(pk=pk)
+    except ProductCategory.DoesNotExist:
+        return Response({'error': 'Category not found'}, status=status.HTTP_404_NOT_FOUND)
+
+    serializer = ProductCategorySerializer(category)
+    return Response(serializer.data)
+
+# -------------------------------
+# SUPPLIER PRODUCT APIS
+# -------------------------------
+@api_view(['GET'])
+def supplier_product_list(request):
+    """
+    List all supplier products.
+    """
+    sp = SupplierProduct.objects.all()
+    serializer = SupplierProductSerializer(sp, many=True)
+    return Response(serializer.data)
+
+@api_view(['POST'])
+def update_supplier_product(request):
+    """
+    Update maximum_capacity of a SupplierProduct.
+    """
+    supplier_id = request.data.get('supplier_id')
+    product_id = request.data.get('product_id')
+    new_capacity = request.data.get('maximum_capacity')
+
+    if not all([supplier_id, product_id, new_capacity]):
+        return Response({"error": "Missing fields"}, status=400)
+
+    try:
+        sp = SupplierProduct.objects.get(supplier_id=supplier_id, product_id=product_id)
+        sp.maximum_capacity = new_capacity
+        sp.save()
+        return Response({"status": "success"}, status=200)
+    except SupplierProduct.DoesNotExist:
+        return Response({"error": "SupplierProduct not found"}, status=404)
+
+
+@api_view(['GET'])
+def product_stock_summary(request, sku_code):
+    
+    # Ensure SKU format is valid (e.g., SKU001)
+    if not sku_code.startswith("SKU") or not sku_code[3:].isdigit():
+        return Response({'error': 'Invalid SKU format'}, status=400)
+
+    product_id = int(sku_code[3:])  # SKU001 → 1
+    
+    try:
+        product = Product.objects.get(id=product_id)
+    except Product.DoesNotExist:
+        return Response({'error': 'Product not found'}, status=status.HTTP_404_NOT_FOUND)
+
+    total_stock = WarehouseInventory.objects.filter(product_id=product_id).aggregate(
+        total=Sum('quantity')
+    )['total'] or 0
+
+    return Response({
+        "product_name": product.product_name,
+        "current_stock": float(total_stock)
+    }, status=status.HTTP_200_OK)

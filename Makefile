@@ -82,3 +82,6 @@ db-restart:
 
 db-psql:
 	cd database && docker-compose exec psql-client psql $(DATABASE_URL)
+
+
+	

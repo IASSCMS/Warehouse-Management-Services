@@ -1,7 +1,5 @@
 from django.db import models
 
-from django.db import models
-
 class ProductCategory(models.Model):
     category_name = models.CharField(max_length=50, unique=True)
     description = models.TextField(blank=True)
