@@ -4,7 +4,8 @@ from rest_framework import status
 from django.utils import timezone
 from decimal import Decimal
 import requests
-
+from product.models import Product, SupplierProduct, ProductCategory
+from django.db.models import Sum
 from .models import Warehouse, WarehouseInventory, InventoryTransaction
 from .serializers import (
     WarehouseSerializer,
@@ -95,13 +96,59 @@ def mark_delivery_received(request):
     except Exception as e:
         return Response({"error": f"Delivery recorded but product update call failed: {str(e)}"}, status=500)
 
-# 3. Supplier Inventory View
+# 3. Supplier's Products View
 @api_view(['GET'])
-def supplier_inventory(request):
-    supplier_id = request.query_params.get('supplier_id')
-    if not supplier_id:
-        return Response({"error": "supplier_id required"}, status=400)
-
+def get_supplier_products(request, supplier_id):
+    # Filter inventory by supplier
     inventory = WarehouseInventory.objects.filter(supplier_id=supplier_id)
-    serializer = WarehouseInventorySerializer(inventory, many=True)
-    return Response(serializer.data)
+
+    if not inventory.exists():
+        return Response([], status=status.HTTP_200_OK)
+
+    # Group by product
+    result = []
+    product_ids = inventory.values_list('product_id', flat=True).distinct()
+
+    for product_id in product_ids:
+        product = Product.objects.filter(id=product_id).first()
+        if not product:
+            continue
+
+        stock_level = inventory.filter(product_id=product_id).aggregate(
+            total=Sum('quantity')
+        )['total'] or 0
+
+        result.append({
+            "id": product.id,
+            "name": product.product_name,
+            "supplier_id": supplier_id,
+            "lead_time_days": 5,  # CASE
+            "stock_level": int(stock_level),
+        })
+
+    return Response(result, status=status.HTTP_200_OK)
+
+
+
+@api_view(['GET'])
+def get_suppliers_by_category(request):
+    category_name = request.query_params.get('category')
+
+    if not category_name:
+        return Response({"error": "Category parameter is required."}, status=400)
+
+    try:
+        category = ProductCategory.objects.get(category_name__iexact=category_name)
+    except ProductCategory.DoesNotExist:
+        return Response({"supplier_ids": []}, status=200)
+
+    # Get product IDs in this category
+    product_ids = Product.objects.filter(category=category).values_list('id', flat=True)
+
+    # Find unique supplier_ids from WarehouseInventory with these products
+    supplier_ids = WarehouseInventory.objects.filter(
+        product_id__in=product_ids
+    ).values_list('supplier_id', flat=True).distinct()
+
+    return Response({"supplier_ids": list(supplier_ids)}, status=200)
+
