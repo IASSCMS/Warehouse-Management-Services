@@ -4,8 +4,9 @@ from .views import (
     warehouse_inventory_list,
     transaction_list,
     mark_delivery_received,
-    supplier_inventory,
-    supplier_dashboard
+    get_supplier_products,
+    supplier_dashboard,
+    get_suppliers_by_category,
 )
 
 urlpatterns = [
@@ -24,10 +25,13 @@ urlpatterns = [
 
     # GET endpoint to return current inventory items for a specific supplier
     # Requires supplier_id in query params (?supplier_id=...)
-    path('supplier-inventory/', supplier_inventory, name='supplier-inventory'),
+    path('suppliers/<int:supplier_id>/products', get_supplier_products, name='supplier-products'),
 
     # GET endpoint to return a dashboard summary for a supplier
     # Includes product names, stock quantity, last restocked date, and warehouse info
     # Requires supplier_id in query params (?supplier_id=...)
     path('supplier-dashboard/', supplier_dashboard, name='supplier-dashboard'),
+    
+    # GET suppliers by category
+    path('suppliers-by-category', get_suppliers_by_category, name='suppliers-by-category'),
 ]
