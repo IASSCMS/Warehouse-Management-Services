@@ -99,13 +99,11 @@ def mark_delivery_received(request):
 # 3. Supplier's Products View
 @api_view(['GET'])
 def get_supplier_products(request, supplier_id):
-    # Filter inventory by supplier
     inventory = WarehouseInventory.objects.filter(supplier_id=supplier_id)
 
     if not inventory.exists():
         return Response([], status=status.HTTP_200_OK)
 
-    # Group by product
     result = []
     product_ids = inventory.values_list('product_id', flat=True).distinct()
 
@@ -118,16 +116,21 @@ def get_supplier_products(request, supplier_id):
             total=Sum('quantity')
         )['total'] or 0
 
+        # Get lead_time_days from SupplierProduct
+        supplier_product = SupplierProduct.objects.filter(
+            product=product, supplier_id=supplier_id
+        ).first()
+        lead_time_days = supplier_product.lead_time_days if supplier_product else None
+
         result.append({
             "id": product.id,
             "name": product.product_name,
             "supplier_id": supplier_id,
-            "lead_time_days": 5,  # CASE
+            "lead_time_days": lead_time_days,
             "stock_level": int(stock_level),
         })
 
     return Response(result, status=status.HTTP_200_OK)
-
 
 
 @api_view(['GET'])
