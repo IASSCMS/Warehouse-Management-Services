@@ -10,6 +10,13 @@ jobs:
   build:
     runs-on: ubuntu-latest
 
+    env:
+      DJANGO_SECRET_KEY: ${{ secrets.DJANGO_SECRET_KEY }}
+      DJANGO_DEBUG: True
+      DJANGO_ALLOWED_HOSTS: localhost,127.0.0.1
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+
+      
     steps:
     - uses: actions/checkout@v4
 
@@ -26,4 +33,4 @@ jobs:
     - name: Run Django Tests
       working-directory: ./warehouse_managment
       run: |
-        python manage.py test --keepdb
+         python manage.py test product/tests warehouse_managment/tests --keepdb
