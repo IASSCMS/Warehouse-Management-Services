@@ -8,28 +8,20 @@ from warehouse.models import WarehouseInventory
 
 @api_view(['GET'])
 def root(request):
-    """
-    Root endpoint for the product management system.
-    """
+
     return Response({"message": "Welcome to the Product Management System!"}, status=status.HTTP_200_OK)
 
-# -------------------------------
-# PRODUCT APIS
-# -------------------------------
+
 @api_view(['GET'])
 def product_list(request):
-    """
-    List all products.
-    """
+
     products = Product.objects.all()
     serializer = ProductSerializer(products, many=True)
     return Response(serializer.data)
 
 @api_view(['GET'])
 def product_detail(request, pk):
-    """
-    Retrieve a product by ID.
-    """
+
     try:
         product = Product.objects.get(pk=pk)
     except Product.DoesNotExist:
@@ -38,23 +30,17 @@ def product_detail(request, pk):
     serializer = ProductSerializer(product)
     return Response(serializer.data)
 
-# -------------------------------
-# PRODUCT CATEGORY APIS
-# -------------------------------
+
 @api_view(['GET'])
 def category_list(request):
-    """
-    List all product categories.
-    """
+
     categories = ProductCategory.objects.all()
     serializer = ProductCategorySerializer(categories, many=True)
     return Response(serializer.data)
 
 @api_view(['GET'])
 def category_detail(request, pk):
-    """
-    Retrieve a single category by ID.
-    """
+
     try:
         category = ProductCategory.objects.get(pk=pk)
     except ProductCategory.DoesNotExist:
@@ -63,26 +49,20 @@ def category_detail(request, pk):
     serializer = ProductCategorySerializer(category)
     return Response(serializer.data)
 
-# -------------------------------
-# SUPPLIER PRODUCT APIS
-# -------------------------------
+
 @api_view(['GET'])
 def supplier_product_list(request):
-    """
-    List all supplier products.
-    """
+
     sp = SupplierProduct.objects.all()
     serializer = SupplierProductSerializer(sp, many=True)
     return Response(serializer.data)
 
 @api_view(['POST'])
 def update_supplier_product(request):
-    """
-    Update maximum_capacity of a SupplierProduct.
-    """
-    supplier_id = request.data.get('supplier_id')
-    product_id = request.data.get('product_id')
-    new_capacity = request.data.get('maximum_capacity')
+
+    supplier_id = request.query_params.get('supplier_id')
+    product_id = request.query_params.get('product_id')
+    new_capacity = request.query_params.get('maximum_capacity')
 
     if not all([supplier_id, product_id, new_capacity]):
         return Response({"error": "Missing fields"}, status=400)
