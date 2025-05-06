@@ -71,9 +71,24 @@ def supplier_product_list(request):
     """
     List all supplier products.
     """
-    sp = SupplierProduct.objects.all()
-    serializer = SupplierProductSerializer(sp, many=True)
-    return Response(serializer.data)
+    product_id = request.query_params.get('product_id') 
+    if product_id:
+        sp = SupplierProduct.objects.filter(product_id=product_id)
+    else:
+        return Response({"error": "Product ID is required"}, status=400)
+    result = []
+    for sp in sp:
+        product = Product.objects.get(id=sp.product_id)
+        result.append({
+        
+
+            "supplier_id": sp.supplier_id,
+            "unit_price": product.unit_price,
+            "lead_time_days": sp.lead_time_days
+            }
+            )  
+
+    return Response(result)
 
 @api_view(['POST'])
 def update_supplier_product(request):

@@ -111,6 +111,7 @@ def get_supplier_products(request, supplier_id):
 
     for product_id in product_ids:
         product = Product.objects.filter(id=product_id).first()
+        supplier_product = SupplierProduct.objects.filter(product_id=product_id, supplier_id=supplier_id).first()
         if not product:
             continue
 
@@ -122,7 +123,7 @@ def get_supplier_products(request, supplier_id):
             "id": product.id,
             "name": product.product_name,
             "supplier_id": supplier_id,
-            "lead_time_days": 5,  # CASE
+            "lead_time_days": supplier_product.lead_time_days,  # CASE
             "stock_level": int(stock_level),
         })
 

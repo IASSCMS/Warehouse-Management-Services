@@ -34,11 +34,6 @@ class ProductTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data['category_name'], "Electronics")
 
-    def test_supplier_product_list(self):
-        url = reverse('supplier-product-list')
-        response = self.client.get(url)
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(response.data), 1)
 
     def test_update_supplier_product(self):
         url = reverse('update-supplier-product')
@@ -52,4 +47,18 @@ class ProductTests(APITestCase):
         self.supplier_product.refresh_from_db()
         self.assertEqual(self.supplier_product.maximum_capacity, 150)
 
+    def test_supplier_product_list(self):
+        # Test with valid product_id
+        url = reverse('supplier-product-list') + f'?product_id={self.product.id}'
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), 1)
+        self.assertEqual(response.data[0]['supplier_id'], 1)
+        self.assertEqual(response.data[0]['unit_price'], float(self.product.unit_price))
+
+        # Test with missing product_id
+        url = reverse('supplier-product-list')
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.data['error'], "Product ID is required")
    
