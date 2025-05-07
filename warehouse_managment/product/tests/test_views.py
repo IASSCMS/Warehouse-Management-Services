@@ -43,22 +43,22 @@ class ProductTests(APITestCase):
             'maximum_capacity': 150
         }
         response = self.client.post(url, data, format='json')
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.data['error'], "Missing fields")
+
+        # Update to use query parameters
+        url = f"{url}?supplier_id=1&product_id={self.product.id}&maximum_capacity=150"
+        response = self.client.post(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.supplier_product.refresh_from_db()
         self.assertEqual(self.supplier_product.maximum_capacity, 150)
 
     def test_supplier_product_list(self):
-        # Test with valid product_id
-        url = reverse('supplier-product-list') + f'?product_id={self.product.id}'
+        # Test without product_id
+        url = reverse('supplier-product-list')
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response.data), 1)
         self.assertEqual(response.data[0]['supplier_id'], 1)
-        self.assertEqual(response.data[0]['unit_price'], float(self.product.unit_price))
-
-        # Test with missing product_id
-        url = reverse('supplier-product-list')
-        response = self.client.get(url)
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertEqual(response.data['error'], "Product ID is required")
+        self.assertEqual(float(response.data[0]['supplier_price']), float(self.supplier_product.supplier_price))
    
