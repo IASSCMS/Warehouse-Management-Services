@@ -21,48 +21,66 @@ def warehouse_list(request):
 
 @api_view(['GET'])
 def warehouse_inventory_list(request):
-    inventory = WarehouseInventory.objects.all()
+    warehouse_id = request.query_params.get('warehouse_id')
+
+    if warehouse_id:
+        inventory = WarehouseInventory.objects.filter(warehouse_id=warehouse_id)
+    else:
+        inventory = WarehouseInventory.objects.all()
+
     serializer = WarehouseInventorySerializer(inventory, many=True)
     return Response(serializer.data)
 
+
 @api_view(['GET'])
 def transaction_list(request):
+    warehouse_id = request.query_params.get('warehouse_id')
     transactions = InventoryTransaction.objects.all()
+    if warehouse_id:
+        transactions = transactions.filter(inventory__warehouse_id=warehouse_id)
+
     serializer = InventoryTransactionSerializer(transactions, many=True)
     return Response(serializer.data)
 
-# 1. Supplier Dashboard
+
+# 4. Supplier Dashboard
 @api_view(['GET'])
 def supplier_dashboard(request):
     supplier_id = request.query_params.get('supplier_id')
+    warehouse_id = request.query_params.get('warehouse_id')
+
     if not supplier_id:
         return Response({"error": "supplier_id required"}, status=400)
 
     inventory = WarehouseInventory.objects.filter(supplier_id=supplier_id)
+    if warehouse_id:
+        inventory = inventory.filter(warehouse_id=warehouse_id)
+
     summary = []
     for item in inventory:
         summary.append({
             "product": item.product.product_name,
             "quantity": float(item.quantity),
             "last_restocked": item.last_restocked,
-            "warehouse": item.warehouse.warehouse_name,
         })
     return Response(summary)
 
-# 2. Mark Delivery Received
+
 @api_view(['POST'])
 def mark_delivery_received(request):
-    supplier_id = request.data.get('supplier_id')
-    product_id = request.data.get('product_id')
-    quantity = request.data.get('quantity')
+    supplier_id = request.query_params.get('supplier_id')
+    product_id = request.query_params.get('product_id')
+    warehouse_id = request.query_params.get('warehouse_id')
+    quantity = request.query_params.get('quantity')
 
-    if not all([supplier_id, product_id, quantity]):
+    if not all([supplier_id, product_id, quantity, warehouse_id]):
         return Response({'error': 'Missing fields'}, status=400)
 
     try:
         inventory = WarehouseInventory.objects.get(
             supplier_id=supplier_id,
-            product_id=product_id
+            product_id=product_id,
+            warehouse_id=warehouse_id
         )
     except WarehouseInventory.DoesNotExist:
         return Response({'error': 'Inventory not found'}, status=404)
@@ -79,33 +97,25 @@ def mark_delivery_received(request):
         created_by=f"Supplier {supplier_id}"
     )
 
-    # Internal API call to update product max capacity
-    try:
-        response = requests.post(
-            "http://localhost:8000/api/product/update-supplier-product/",
-            json={
-                "supplier_id": supplier_id,
-                "product_id": product_id,
-                "maximum_capacity": inventory.quantity
-            }
-        )
-        if response.status_code == 200:
-            return Response({"status": "Delivery recorded and product updated"})
-        else:
-            return Response({"warning": "Delivery recorded but product update failed"}, status=202)
-    except Exception as e:
-        return Response({"error": f"Delivery recorded but product update call failed: {str(e)}"}, status=500)
+    supplier_product, created = SupplierProduct.objects.get_or_create(
+        supplier_id=supplier_id,
+        product_id=product_id,
+        defaults={"maximum_capacity": inventory.quantity}
+    )
+    if not created:
+        supplier_product.maximum_capacity = inventory.quantity
+        supplier_product.save()
 
-# 3. Supplier's Products View
+    return Response({"status": "Delivery recorded and product updated"}, status=200)
+
+
 @api_view(['GET'])
 def get_supplier_products(request, supplier_id):
-    # Filter inventory by supplier
     inventory = WarehouseInventory.objects.filter(supplier_id=supplier_id)
 
     if not inventory.exists():
         return Response([], status=status.HTTP_200_OK)
 
-    # Group by product
     result = []
     product_ids = inventory.values_list('product_id', flat=True).distinct()
 
@@ -119,16 +129,21 @@ def get_supplier_products(request, supplier_id):
             total=Sum('quantity')
         )['total'] or 0
 
+
+        supplier_product = SupplierProduct.objects.filter(
+            product=product, supplier_id=supplier_id
+        ).first()
+        lead_time_days = supplier_product.lead_time_days if supplier_product else None
+
         result.append({
             "id": product.id,
             "name": product.product_name,
             "supplier_id": supplier_id,
-            "lead_time_days": supplier_product.lead_time_days,  # CASE
+            "lead_time_days": lead_time_days,
             "stock_level": int(stock_level),
         })
 
     return Response(result, status=status.HTTP_200_OK)
-
 
 
 @api_view(['GET'])
@@ -143,10 +158,8 @@ def get_suppliers_by_category(request):
     except ProductCategory.DoesNotExist:
         return Response({"supplier_ids": []}, status=200)
 
-    # Get product IDs in this category
     product_ids = Product.objects.filter(category=category).values_list('id', flat=True)
 
-    # Find unique supplier_ids from WarehouseInventory with these products
     supplier_ids = WarehouseInventory.objects.filter(
         product_id__in=product_ids
     ).values_list('supplier_id', flat=True).distinct()
