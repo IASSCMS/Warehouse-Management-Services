@@ -75,26 +75,23 @@ def update_supplier_product(request):
     except SupplierProduct.DoesNotExist:
         return Response({"error": "SupplierProduct not found"}, status=404)
 
-
 @api_view(['GET'])
 def product_stock_summary(request, sku_code):
-    
-    # Ensure SKU format is valid (e.g., SKU001)
+    # Optional: Validate SKU format if needed
     if not sku_code.startswith("SKU") or not sku_code[3:].isdigit():
         return Response({'error': 'Invalid SKU format'}, status=400)
 
-    product_id = int(sku_code[3:])  # SKU001 → 1
-    
     try:
-        product = Product.objects.get(id=product_id)
+        product = Product.objects.get(product_SKU=sku_code)
     except Product.DoesNotExist:
         return Response({'error': 'Product not found'}, status=status.HTTP_404_NOT_FOUND)
 
-    total_stock = WarehouseInventory.objects.filter(product_id=product_id).aggregate(
+    total_stock = WarehouseInventory.objects.filter(product=product).aggregate(
         total=Sum('quantity')
     )['total'] or 0
 
     return Response({
         "product_name": product.product_name,
+        "product_SKU": product.product_SKU,
         "current_stock": float(total_stock)
     }, status=status.HTTP_200_OK)

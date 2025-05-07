@@ -7,6 +7,7 @@ class ProductCategory(models.Model):
         db_table = 'product_category'
 
 class Product(models.Model):
+    product_SKU = models.CharField(max_length=30, unique=True, default='SKU000')
     product_name = models.CharField(max_length=60)
     unit_price = models.DecimalField(max_digits=10, decimal_places=2)
     category = models.ForeignKey(ProductCategory, on_delete=models.CASCADE)
