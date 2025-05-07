@@ -20,13 +20,13 @@ class WarehouseTests(APITestCase):
         self.assertEqual(len(response.data), 1)
 
     def test_warehouse_inventory_list(self):
-        url = reverse('inventory-list')
+        url = reverse('inventory-by-warehouse')
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response.data), 1)
 
     def test_transaction_list(self):
-        url = reverse('transaction-list')
+        url = reverse('transaction-list', args=[self.warehouse.id])
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response.data), 1)
@@ -37,10 +37,30 @@ class WarehouseTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response.data), 1)
 
- 
+    def test_warehouse_inventory_list_with_filter(self):
+        # Test with warehouse_id filter
+        url = reverse('inventory-by-warehouse') + f'?warehouse_id={self.warehouse.id}'
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), 1)
 
-    # def test_supplier_inventory(self):
-    #     url = reverse('supplier-inventory') + '?supplier_id=1'
-    #     response = self.client.get(url)
-    #     self.assertEqual(response.status_code, status.HTTP_200_OK)
-    #     self.assertEqual(len(response.data), 1)
+    def test_transaction_list_with_filter(self):
+        # Test with warehouse_id filter
+        url = reverse('transaction-list', args=[self.warehouse.id])
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), 1)
+
+    def test_supplier_dashboard_with_warehouse(self):
+        # Test with supplier_id and warehouse_id
+        url = reverse('supplier-dashboard') + f'?supplier_id=1&warehouse_id={self.warehouse.id}'
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), 1)
+
+    def test_supplier_inventory(self):
+        # Update to use the correct URL pattern
+        url = reverse('supplier-products', args=[1])
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), 1)

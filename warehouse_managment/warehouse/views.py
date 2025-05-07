@@ -33,8 +33,7 @@ def warehouse_inventory_list(request):
 
 
 @api_view(['GET'])
-def transaction_list(request):
-    warehouse_id = request.query_params.get('warehouse_id')
+def transaction_list(request, warehouse_id):
     transactions = InventoryTransaction.objects.all()
     if warehouse_id:
         transactions = transactions.filter(inventory__warehouse_id=warehouse_id)
