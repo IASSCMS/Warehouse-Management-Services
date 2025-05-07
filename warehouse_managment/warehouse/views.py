@@ -7,6 +7,7 @@ import requests
 from product.models import Product, SupplierProduct, ProductCategory
 from django.db.models import Sum
 from .models import Warehouse, WarehouseInventory, InventoryTransaction
+from .supplier_names import SUPPLIER_NAME_MAP
 from .serializers import (
     WarehouseSerializer,
     WarehouseInventorySerializer,
@@ -23,13 +24,40 @@ def warehouse_list(request):
 def warehouse_inventory_list(request):
     warehouse_id = request.query_params.get('warehouse_id')
 
-    if warehouse_id:
-        inventory = WarehouseInventory.objects.filter(warehouse_id=warehouse_id)
-    else:
-        inventory = WarehouseInventory.objects.all()
+    if not warehouse_id:
+        return Response({"error": "warehouse_id is required"}, status=400)
 
-    serializer = WarehouseInventorySerializer(inventory, many=True)
-    return Response(serializer.data)
+    try:
+        warehouse = Warehouse.objects.get(id=warehouse_id)
+    except Warehouse.DoesNotExist:
+        return Response({"error": "Warehouse not found"}, status=404)
+
+    inventory = WarehouseInventory.objects.filter(warehouse_id=warehouse_id)
+
+    current_stock_level = inventory.aggregate(total=Sum('quantity'))['total'] or 0
+    minimum_stock_level = inventory.aggregate(min_level=Sum('minimum_stock_level'))['min_level'] or 0
+    last_restocked = inventory.order_by('-last_restocked').values_list('last_restocked', flat=True).first()
+
+    inventory_product_details = []
+    for item in inventory:
+        inventory_product_details.append({
+            "product_name": item.product.product_name,
+            "category": item.product.category.category_name,
+            "supplied_by": SUPPLIER_NAME_MAP.get(item.supplier_id, f"Supplier {item.supplier_id}"),
+            "supplied_date": item.created_at.date() if item.created_at else None,
+            "product_count": int(item.quantity),
+        })
+
+    result = {
+        "warehouse_city": warehouse.warehouse_name,
+        "minimum_stock_level": float(minimum_stock_level),
+        "last_restocked": last_restocked.date() if last_restocked else None,
+        "current_stock_level": float(current_stock_level),
+        "inventory_product_details": inventory_product_details
+    }
+
+    return Response(result, status=200)
+
 
 
 @api_view(['GET'])
