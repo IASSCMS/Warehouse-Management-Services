@@ -1,6 +1,4 @@
 from django.db import models
-
-from django.db import models
 from product.models import Product
 
 class Warehouse(models.Model):
@@ -16,7 +14,6 @@ class Warehouse(models.Model):
 class WarehouseInventory(models.Model):
     warehouse = models.ForeignKey(Warehouse, on_delete=models.CASCADE)
     product = models.ForeignKey(Product, on_delete=models.CASCADE)
-    supplier_id = models.IntegerField()
     quantity = models.DecimalField(max_digits=10, decimal_places=2)
     last_restocked = models.DateTimeField(blank=True, null=True)
     minimum_stock_level = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
@@ -49,3 +46,11 @@ class InventoryTransaction(models.Model):
     class Meta:
         db_table = 'inventory_transactions'
 
+class WarehouseSupplier(models.Model):
+    warehouse = models.ForeignKey(Warehouse, on_delete=models.CASCADE)
+    supplier_id = models.IntegerField()
+
+    class Meta:
+        db_table = 'warehouse_supplier'
+        unique_together = (('warehouse', 'supplier_id'),)
+        

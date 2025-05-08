@@ -7,6 +7,8 @@ from .views import (
     supplier_dashboard,
     get_suppliers_by_category,
     warehouse_inventory_list,
+    order_inventory_summary,
+    handle_order_status,
 )
 
 urlpatterns = [
@@ -34,4 +36,12 @@ urlpatterns = [
 
     # GET suppliers by category
     path('suppliers-by-category', get_suppliers_by_category, name='suppliers-by-category'),
+    
+    # GET Product counts and names by orders
+    path('order-inventory-summary/', order_inventory_summary),
+    
+    # POST endpoint to accept or reject an order request and update inventory
+    path('order/handle/', handle_order_status, name='handle_order_status'),
 ]
+
+

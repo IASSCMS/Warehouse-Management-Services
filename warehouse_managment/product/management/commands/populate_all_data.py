@@ -1,6 +1,6 @@
 from django.core.management.base import BaseCommand
 from product.models import ProductCategory, Product, SupplierProduct
-from warehouse.models import Warehouse, WarehouseInventory, InventoryTransaction
+from warehouse.models import Warehouse, WarehouseInventory, InventoryTransaction, WarehouseSupplier
 from decimal import Decimal
 from django.utils import timezone
 import random
@@ -13,12 +13,13 @@ class Command(BaseCommand):
     def handle(self, *args, **kwargs):
         self.stdout.write("🧹 Deleting existing data...")
 
-        InventoryTransaction.objects.all().delete()
-        WarehouseInventory.objects.all().delete()
-        SupplierProduct.objects.all().delete()
-        Product.objects.all().delete()
-        ProductCategory.objects.all().delete()
-        Warehouse.objects.all().delete()
+        # InventoryTransaction.objects.all().delete()
+        # WarehouseInventory.objects.all().delete()
+        # SupplierProduct.objects.all().delete()
+        # Product.objects.all().delete()
+        # ProductCategory.objects.all().delete()
+        # WarehouseSupplier.objects.all().delete()
+        # Warehouse.objects.all().delete()
 
         self.stdout.write("🧪 Populating new data...")
 
@@ -34,7 +35,7 @@ class Command(BaseCommand):
 
         # Products
         products = []
-        for i in range(10):  # more products
+        for i in range(10):
             category = random.choice(categories)
             product = Product.objects.create(
                 product_SKU=f"SKU{i + 1:03}",
@@ -44,7 +45,7 @@ class Command(BaseCommand):
             )
             products.append(product)
 
-        # Warehouses
+        # Warehouses (Randomly assigning warehouses to suppliers)
         warehouse_data = [
             ("Colombo Central", "6.9271° N", "79.8612° E"),
             ("Kandy Depot", "7.2906° N", "80.6337° E"),
@@ -56,39 +57,52 @@ class Command(BaseCommand):
                 warehouse_name=name,
                 location_x=x,
                 location_y=y,
-                capacity=Decimal("1000000.00")
+                capacity=Decimal("100000000.00")
             )
             warehouses.append(warehouse)
 
-        # SupplierProduct, WarehouseInventory, and InventoryTransaction
-        for product in products:
-            for supplier_id in [101, 102, 103]:
-                # SupplierProduct
-                max_capacity = random.randint(300000, 600000)
-                lead_time = random.randint(3, 10)
-                SupplierProduct.objects.create(
-                    supplier_id=supplier_id,
-                    product=product,
-                    maximum_capacity=max_capacity,
-                    supplier_price=round(random.uniform(80, 1500), 2),
-                    lead_time_days=lead_time
-                )
+        # SupplierProduct, WarehouseInventory, InventoryTransaction, WarehouseSupplier
+        created_pairs = set()
 
-                # For each warehouse, create inventory & transactions
-                for warehouse in warehouses:
+        for product in products:
+            # Randomly assign suppliers (not for all suppliers)
+            suppliers = random.sample([101, 102, 103], k=random.randint(1, 3))  # Randomly pick 1 to 3 suppliers
+            for supplier_id in suppliers:
+                # SupplierProduct (Randomly create it for some suppliers)
+                if random.choice([True, False]):
+                    max_capacity = random.randint(300000, 600000)
+                    lead_time = random.randint(3, 10)
+                    SupplierProduct.objects.create(
+                        supplier_id=supplier_id,
+                        product=product,
+                        maximum_capacity=max_capacity,
+                        supplier_price=round(random.uniform(80, 1500), 2),
+                        lead_time_days=lead_time
+                    )
+                
+                # WarehouseSupplier (Randomly assign warehouses for this supplier)
+                warehouse = random.choice(warehouses)  # Randomly pick one warehouse for this supplier
+                if (warehouse.id, supplier_id) not in created_pairs:
+                    WarehouseSupplier.objects.create(
+                        warehouse=warehouse,
+                        supplier_id=supplier_id
+                    )
+                    created_pairs.add((warehouse.id, supplier_id))
+
+                # Inventory - ensure unique product_id and warehouse_id combination
+                if not WarehouseInventory.objects.filter(warehouse=warehouse, product=product).exists():
                     quantity = Decimal(random.uniform(100000, 400000))
                     last_restocked = timezone.now() - timedelta(days=random.randint(1, 60))
 
                     inventory = WarehouseInventory.objects.create(
                         warehouse=warehouse,
                         product=product,
-                        supplier_id=supplier_id,
                         quantity=quantity,
                         last_restocked=last_restocked,
                         minimum_stock_level=Decimal("100000.00")
                     )
 
-                    # Create 1-2 incoming and 1 outgoing transactions per inventory
+                    # Transactions
                     for _ in range(random.randint(1, 2)):
                         qty_in = Decimal(random.uniform(10000, 50000))
                         InventoryTransaction.objects.create(
@@ -111,4 +125,4 @@ class Command(BaseCommand):
                             created_by="System"
                         )
 
-        self.stdout.write(self.style.SUCCESS("✅ Successfully seeded all data including inventory and transactions!"))
+        self.stdout.write(self.style.SUCCESS("✅ Successfully seeded all data!!!"))
