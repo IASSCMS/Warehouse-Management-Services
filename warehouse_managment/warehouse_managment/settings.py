@@ -49,6 +49,7 @@ INSTALLED_APPS = [
     'rest_framework',  # Django REST framework
     'django.contrib.postgres',
     'corsheaders',  # CORS headers
+    'drf_yasg'
 ]
 
 MIDDLEWARE = [
