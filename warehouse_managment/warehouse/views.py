@@ -50,6 +50,7 @@ def warehouse_inventory_list(request):
 
     result = {
         "warehouse_city": warehouse.warehouse_name,
+        "warehouse_capacity": float(warehouse.capacity),
         "minimum_stock_level": float(minimum_stock_level),
         "last_restocked": last_restocked.date() if last_restocked else None,
         "current_stock_level": float(current_stock_level),
