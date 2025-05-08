@@ -5,3 +5,4 @@ python-dotenv
 dj-database-url
 requests
 django-cors-headers
+drf_yasg
