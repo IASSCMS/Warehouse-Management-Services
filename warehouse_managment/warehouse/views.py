@@ -1,3 +1,4 @@
+import requests
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework import status
@@ -133,48 +134,90 @@ def supplier_dashboard(request):
 
 @api_view(['POST'])
 def mark_delivery_received(request):
-    supplier_id = request.data.get('supplier_id')
-    product_id = request.data.get('product_id')
-    warehouse_id = request.data.get('warehouse_id')
-    quantity = request.data.get('quantity')
+    data = request.data
+    required_fields = ['requestId', 'product_id', 'supplier_id', 'warehouse_id', 'quantity', 'status', 'is_defective', 'quality', 'comments']
 
-    if not all([supplier_id, product_id, warehouse_id, quantity]):
-        return Response({'error': 'Missing required fields'}, status=400)
+
+    if not all(field in data for field in required_fields):
+        return Response({'error': 'Missing required fields'}, status=status.HTTP_400_BAD_REQUEST)
 
     try:
-        quantity = Decimal(quantity)
-    except:
-        return Response({'error': 'Invalid quantity format'}, status=400)
+        quantity = Decimal(data['quantity'])
+        quality = int(data['quality'])
+        is_defective = str(data['is_defective']).lower() == 'true'
+        request_id = data['requestId']
+        status_flag = data['status']
+    except Exception as e:
+        return Response({'error': f'Invalid input format: {str(e)}'}, status=status.HTTP_400_BAD_REQUEST)
 
-    inventory, created = WarehouseInventory.objects.get_or_create(
-        product_id=product_id,
-        warehouse_id=warehouse_id,
-        defaults={'quantity': quantity, 'last_restocked': timezone.now()}
-    )
+    product_id = data['product_id']
+    warehouse_id = data['warehouse_id']
+    supplier_id = data['supplier_id']
+    comments = data['comments']
+    note = f"{comments} | Quality: {quality} | Defective: {is_defective}"
 
-    if not created:
-        inventory.quantity += quantity
-        inventory.last_restocked = timezone.now()
-        inventory.save()
+    try:
+
+        inventory = WarehouseInventory.objects.select_related('warehouse', 'product').get(
+            warehouse_id=warehouse_id,
+            product_id=product_id
+        )
+    except WarehouseInventory.DoesNotExist:
+        if status_flag == "returned":
+            inventory = None
+        else:
+            inventory = WarehouseInventory.objects.create(
+                warehouse_id=warehouse_id,
+                product_id=product_id,
+                quantity=quantity,
+                last_restocked=timezone.now(),
+                minimum_stock_level=Decimal("100000.00")
+            )
+    else:
+        if status_flag == "received":
+            inventory.quantity += quantity
+            inventory.last_restocked = timezone.now()
+            inventory.save()
 
     InventoryTransaction.objects.create(
         inventory=inventory,
-        transaction_type='INCOMING',
+        transaction_type='INCOMING' if status_flag == "received" else 'RETURNED',
         quantity_change=quantity,
-        reference_number="DELIVERY",
-        created_by=f"Supplier {supplier_id}"
+        reference_number=f"{status_flag.upper()}-{request_id}",
+        notes=note,
+        created_by=f"Warehouse {warehouse_id}"
     )
 
-    sp, created = SupplierProduct.objects.get_or_create(
-        supplier_id=supplier_id,
-        product_id=product_id,
-        defaults={"maximum_capacity": inventory.quantity}
-    )
-    if not created:
-        sp.maximum_capacity = max(sp.maximum_capacity, inventory.quantity)
-        sp.save()
 
-    return Response({"status": "Delivery recorded and inventory updated"})
+    if status_flag == "received":
+        sp, created = SupplierProduct.objects.get_or_create(
+            supplier_id=supplier_id,
+            product_id=product_id,
+            defaults={"maximum_capacity": quantity}
+        )
+        if not created:
+            sp.maximum_capacity = max(sp.maximum_capacity, inventory.quantity)
+            sp.save()
+
+    try:
+        status_update_payload = {
+            "status": status_flag,
+            "is_defective": str(is_defective).lower(),
+            "quality": quality
+        }
+        response = requests.post(
+            f"http://localhost:8000/api/v0/supplier-request/request/{request_id}/",
+            json=status_update_payload,
+            timeout=5
+        )
+        response.raise_for_status()
+    except requests.RequestException as e:
+        return Response({
+            "error": f"Delivery processed, but failed to notify external system.",
+            "details": str(e)
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+    return Response({"status": f"Delivery {status_flag} and processed successfully."}, status=status.HTTP_200_OK)
 
 
 
@@ -233,7 +276,7 @@ def get_suppliers_by_category(request):
 
 
 
-@api_view(['GET'])
+@api_view(['GET'])  
 def order_inventory_summary(request):
     warehouse_id = request.query_params.get('warehouse_id')
     if not warehouse_id:
@@ -275,7 +318,7 @@ def order_inventory_summary(request):
 
 
 
-"""pip install httpx
+"""pip install httpx 
 
 
 import httpx
@@ -344,20 +387,28 @@ def order_inventory_summary(request):
 """
 
 @api_view(['POST'])
-def handle_order_status(request):
-    data = ORDER_REQUEST  # Hardcoded for now
+def handle_order_status(request): #After order is accepted or rejected
+    data = request.data
 
     warehouse_id = data.get("warehouse_id")
     order_id = data.get("order_id")
     status_flag = data.get("status")
 
     if status_flag == "rejected":
+        print(f"Order {order_id} was rejected.")
         return Response({
             "order_id": order_id,
             "message": "Order rejected. No changes made to inventory."
         }, status=status.HTTP_200_OK)
 
     if status_flag == "accepted":
+        try:
+            warehouse = Warehouse.objects.get(id=warehouse_id)
+        except Warehouse.DoesNotExist:
+            return Response({
+                "error": f"Warehouse with id {warehouse_id} not found."
+            }, status=status.HTTP_404_NOT_FOUND)
+
         for item in data.get("products", []):
             product_name = item["product_name"]
             product_count = Decimal(item["product_count"])
@@ -365,7 +416,7 @@ def handle_order_status(request):
             try:
                 product = Product.objects.get(product_name=product_name)
                 inventory = WarehouseInventory.objects.get(
-                    warehouse_id=warehouse_id,
+                    warehouse=warehouse,
                     product=product
                 )
                 if inventory.quantity < product_count:
@@ -384,9 +435,30 @@ def handle_order_status(request):
                     "error": f"No inventory for product '{product_name}' in warehouse {warehouse_id}."
                 }, status=status.HTTP_404_NOT_FOUND)
 
+        status_payload = {
+            "status": "Accepted",
+            "warehouse_location": {
+                "latitude": warehouse.location_x,
+                "longitude": warehouse.location_y
+            }
+        }
+
+        try:
+            response = requests.post(
+                f"http://localhost:8000/api/v0/orders/{order_id}/status/",
+                json=status_payload,
+                timeout=5 
+            )
+            response.raise_for_status() 
+        except requests.RequestException as e:
+            return Response({
+                "error": "Order was accepted and inventory updated, but failed to notify external system.",
+                "details": str(e)
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
         return Response({
             "order_id": order_id,
-            "message": "Order accepted. Inventory updated successfully."
+            "message": "Order accepted. Inventory updated and status sent."
         }, status=status.HTTP_200_OK)
 
     return Response({
@@ -409,16 +481,14 @@ def process_order(request):
     if status != "accepted":
         return Response({"error": "Invalid status"}, status=400)
 
-    # Start a transaction to ensure atomicity
     with transaction.atomic():
         inventory_updates = []
         product_names = [p['product_name'] for p in products]
 
-        # Join WarehouseInventory with Product to get product_id
         inventory_qs = WarehouseInventory.objects.filter(
             warehouse_id=warehouse_id,
             product__product_name__in=product_names
-        ).select_related('product')  # Optimizing by selecting related Product
+        ).select_related('product') 
 
         product_map = {p['product_name']: p['product_count'] for p in products}
         
@@ -426,17 +496,14 @@ def process_order(request):
             product_name = inventory.product.product_name
             product_count = product_map.get(product_name)
 
-            # If the product count in inventory is less than the order quantity, we return an error
             if inventory.quantity < product_count:
                 return Response({
                     "error": f"Not enough stock for product: {product_name}"
                 }, status=400)
 
-            # Decrease the stock in the inventory
             inventory.quantity = F('quantity') - product_count
             inventory_updates.append(inventory)
 
-        # Update all the inventories in one go to reduce DB queries
         WarehouseInventory.objects.bulk_update(inventory_updates, ['quantity'])
 
     return Response({"message": "Order processed successfully"}, status=200)
