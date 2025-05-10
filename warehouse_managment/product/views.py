@@ -122,14 +122,19 @@ def get_products_for_supplier(request):
     if not supplier_id:
         return Response({"error": "supplier_id is required"}, status=400)
 
-    product_ids = (
+    products = (
         SupplierProduct.objects
         .filter(supplier_id=supplier_id)
-        .values_list('product_id', flat=True)
+        .values('product_id', 'supplier_price')
         .distinct()
     )
 
     return Response({
         "supplier_id": int(supplier_id),
-        "product_ids": list(product_ids)
+        "products": [
+            {
+                "product_id": item["product_id"],
+                "supplier_price": float(item["supplier_price"])
+            } for item in products
+        ]
     })
