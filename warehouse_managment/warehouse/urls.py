@@ -9,6 +9,7 @@ from .views import (
     warehouse_inventory_list,
     order_inventory_summary,
     handle_order_status,
+    add_supplier_product,
 )
 
 urlpatterns = [
@@ -42,6 +43,8 @@ urlpatterns = [
     
     # POST endpoint to accept or reject an order request and update inventory
     path('order/handle/', handle_order_status, name='handle_order_status'),
+    # POST endpoint to add or update a supplier product
+    path("/supplier-product/add_or_update/", add_supplier_product, name="update_supplier_product"),
 ]
 
 
