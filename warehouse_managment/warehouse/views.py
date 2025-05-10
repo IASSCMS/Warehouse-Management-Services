@@ -256,6 +256,34 @@ def get_supplier_products(request, supplier_id):
 
     return Response(result)
 
+@api_view(['GET'])
+def get_supplier_product_prices(request): 
+    supplier_id = request.query_params.get('supplier_id')
+    if not supplier_id:
+        return Response({"error": "supplier_id required"}, status=400)
+
+    supplier_products = (
+        SupplierProduct.objects
+        .filter(supplier_id=supplier_id)
+        .select_related('product')
+        .annotate(
+            product_name=F('product__product_name'),
+            SKU=F('product__product_SKU')
+        )
+        .values('product_name', 'SKU', 'supplier_price')
+    )
+
+    summary = [
+        {
+            "product_name": item['product_name'],
+            "SKU": item['SKU'],
+            "supplier_price": float(item['supplier_price']),
+        }
+        for item in supplier_products
+    ]
+
+    return Response(summary)
+
 
 
 @api_view(['GET'])
@@ -508,3 +536,48 @@ def process_order(request):
         WarehouseInventory.objects.bulk_update(inventory_updates, ['quantity'])
 
     return Response({"message": "Order processed successfully"}, status=200)
+
+
+@api_view(['POST'])
+def add_supplier_product(request):
+    data = request.data
+    warehouse_id = data.get("warehouse_id")
+    supplier_id = data.get("supplier_id")
+    product_id = data.get("product_id")
+    supplier_price = data.get("supplier_price")
+
+    if not all([warehouse_id, supplier_id, product_id, supplier_price]):
+        return Response({"error": "Missing fields"}, status=status.HTTP_400_BAD_REQUEST)
+
+    ws_exists = WarehouseSupplier.objects.filter(
+        warehouse_id=warehouse_id,
+        supplier_id=supplier_id
+    ).exists()
+
+    if not ws_exists:
+        WarehouseSupplier.objects.create(
+            warehouse_id=warehouse_id,
+            supplier_id=supplier_id
+        )
+
+    sp, created = SupplierProduct.objects.get_or_create(
+        supplier_id=supplier_id,
+        product_id=product_id,
+        defaults={
+            "supplier_price": Decimal(supplier_price),
+            "maximum_capacity": Decimal("0.00"),  # default
+            "lead_time_days": 5  # default
+        }
+    )
+
+    if not created:
+        sp.supplier_price = Decimal(supplier_price)
+        sp.save()
+        message = "SupplierProduct updated with new price."
+    else:
+        message = "SupplierProduct created."
+
+    return Response({
+        "supplier_product_id": sp.id,
+        "message": message
+    }, status=status.HTTP_200_OK)
