@@ -115,3 +115,21 @@ def get_suppliers_for_product(request):
     })
     
     
+    
+@api_view(['GET'])
+def get_products_for_supplier(request):
+    supplier_id = request.query_params.get('supplier_id')
+    if not supplier_id:
+        return Response({"error": "supplier_id is required"}, status=400)
+
+    product_ids = (
+        SupplierProduct.objects
+        .filter(supplier_id=supplier_id)
+        .values_list('product_id', flat=True)
+        .distinct()
+    )
+
+    return Response({
+        "supplier_id": int(supplier_id),
+        "product_ids": list(product_ids)
+    })

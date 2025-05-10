@@ -9,6 +9,7 @@ from .views import (
     update_supplier_product,
     product_stock_summary,
     get_suppliers_for_product,
+    get_products_for_supplier
 )
 
 urlpatterns = [
@@ -32,4 +33,7 @@ urlpatterns = [
 
     # GET SupplierIds for a product Id
     path('suppliers-by-product', get_suppliers_for_product, name='get-suppliers-for-product'),
+
+    # GET Product Ids for a supplier ID
+    path('products-by-supplier', get_products_for_supplier, name='get-products-for-supplier'),
 ]
