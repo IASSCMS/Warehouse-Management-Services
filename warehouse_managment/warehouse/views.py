@@ -256,11 +256,16 @@ def get_supplier_products(request, supplier_id):
 
     return Response(result)
 
+
 @api_view(['GET'])
 def get_supplier_product_prices(request): 
     supplier_id = request.query_params.get('supplier_id')
     if not supplier_id:
         return Response({"error": "supplier_id required"}, status=400)
+
+    connected_warehouses = WarehouseSupplier.objects.filter(
+        supplier_id=supplier_id
+    ).values_list('warehouse_id', flat=True)
 
     supplier_products = (
         SupplierProduct.objects
@@ -268,19 +273,28 @@ def get_supplier_product_prices(request):
         .select_related('product')
         .annotate(
             product_name=F('product__product_name'),
-            SKU=F('product__product_SKU')
+            SKU=F('product__product_SKU'),
         )
-        .values('product_name', 'SKU', 'supplier_price')
     )
 
-    summary = [
-        {
-            "product_name": item['product_name'],
-            "SKU": item['SKU'],
-            "supplier_price": float(item['supplier_price']),
-        }
-        for item in supplier_products
-    ]
+    summary = []
+    for sp in supplier_products:
+        warehouse_names = (
+           Warehouse.objects
+           .filter(
+                id__in=WarehouseSupplier.objects.filter(supplier_id=supplier_id)
+                .values_list('warehouse_id', flat=True)
+        )
+        .values_list('warehouse_name', flat=True)
+        .distinct()
+        )
+
+        summary.append({
+            "product_name": sp.product.product_name,
+            "SKU": sp.product.product_SKU,
+            "supplier_price": float(sp.supplier_price),
+            "warehouses": list(warehouse_names),
+        })
 
     return Response(summary)
 
