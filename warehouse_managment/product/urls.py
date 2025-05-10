@@ -8,6 +8,7 @@ from .views import (
     supplier_product_list,
     update_supplier_product,
     product_stock_summary,
+    get_suppliers_for_product,
 )
 
 urlpatterns = [
@@ -23,8 +24,12 @@ urlpatterns = [
 
     # Supplier product endpoints
     path('supplier-products/', supplier_product_list, name='supplier-product-list'),
+    
     path('supplier-products/update/', update_supplier_product, name='update-supplier-product'),
     
     # Product count endpoint
     path('product-stock-summary/<str:sku_code>/', product_stock_summary),
+
+    # GET SupplierIds for a product Id
+    path('suppliers-by-product', get_suppliers_for_product, name='get-suppliers-for-product'),
 ]

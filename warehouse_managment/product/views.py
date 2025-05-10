@@ -52,7 +52,6 @@ def category_detail(request, pk):
 
 @api_view(['GET'])
 def supplier_product_list(request):
-
     sp = SupplierProduct.objects.all()
     serializer = SupplierProductSerializer(sp, many=True)
     return Response(serializer.data)
@@ -95,3 +94,24 @@ def product_stock_summary(request, sku_code):
         "product_SKU": product.product_SKU,
         "current_stock": float(total_stock)
     }, status=status.HTTP_200_OK)
+
+
+@api_view(['GET'])
+def get_suppliers_for_product(request):
+    product_id = request.query_params.get('product_id')
+    if not product_id:
+        return Response({"error": "product_id is required"}, status=400)
+
+    supplier_ids = (
+        SupplierProduct.objects
+        .filter(product_id=product_id)
+        .values_list('supplier_id', flat=True)
+        .distinct()
+    )
+
+    return Response({
+        "product_id": int(product_id),
+        "supplier_ids": list(supplier_ids)
+    })
+    
+    
