@@ -256,6 +256,34 @@ def get_supplier_products(request, supplier_id):
 
     return Response(result)
 
+@api_view(['GET'])
+def get_supplier_product_prices(request): 
+    supplier_id = request.query_params.get('supplier_id')
+    if not supplier_id:
+        return Response({"error": "supplier_id required"}, status=400)
+
+    supplier_products = (
+        SupplierProduct.objects
+        .filter(supplier_id=supplier_id)
+        .select_related('product')
+        .annotate(
+            product_name=F('product__product_name'),
+            SKU=F('product__product_SKU')
+        )
+        .values('product_name', 'SKU', 'supplier_price')
+    )
+
+    summary = [
+        {
+            "product_name": item['product_name'],
+            "SKU": item['SKU'],
+            "supplier_price": float(item['supplier_price']),
+        }
+        for item in supplier_products
+    ]
+
+    return Response(summary)
+
 
 
 @api_view(['GET'])
