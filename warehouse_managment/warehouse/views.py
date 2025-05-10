@@ -179,21 +179,12 @@ def mark_delivery_received(request):
             inventory.last_restocked = timezone.now()
             inventory.save()
 
-    InventoryTransaction.objects.create(
-        inventory=inventory,
-        transaction_type='INCOMING' if status_flag == "received" else 'RETURNED',
-        quantity_change=quantity,
-        reference_number=f"{status_flag.upper()}-{request_id}",
-        notes=note,
-        created_by=f"Warehouse {warehouse_id}"
-    )
-
-
     if status_flag == "received":
         sp, created = SupplierProduct.objects.get_or_create(
             supplier_id=supplier_id,
             product_id=product_id,
-            defaults={"maximum_capacity": quantity}
+            defaults={"maximum_capacity": quantity,
+                      "supplier_price": 0.0}
         )
         if not created:
             sp.maximum_capacity = max(sp.maximum_capacity, inventory.quantity)
@@ -211,6 +202,16 @@ def mark_delivery_received(request):
             timeout=5
         )
         response.raise_for_status()
+
+        InventoryTransaction.objects.create(
+            inventory=inventory,
+            transaction_type='INCOMING' if status_flag == "received" else 'RETURNED',
+            quantity_change=quantity,
+            reference_number=f"{status_flag.upper()}-{request_id}",
+            notes=note,
+            created_by=f"Warehouse {warehouse_id}"
+        )
+        
     except requests.RequestException as e:
         return Response({
             "error": f"Delivery processed, but failed to notify external system.",
