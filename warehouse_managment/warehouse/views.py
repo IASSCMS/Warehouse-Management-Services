@@ -280,14 +280,13 @@ def get_supplier_product_prices(request):
     summary = []
     for sp in supplier_products:
         warehouse_names = (
-            WarehouseInventory.objects
-            .filter(
-                warehouse_id__in=connected_warehouses,
-                product_id=sp.product_id
-            )
-            .select_related('warehouse')
-            .values_list('warehouse__warehouse_name', flat=True)
-            .distinct()
+           Warehouse.objects
+           .filter(
+                id__in=WarehouseSupplier.objects.filter(supplier_id=supplier_id)
+                .values_list('warehouse_id', flat=True)
+        )
+        .values_list('warehouse_name', flat=True)
+        .distinct()
         )
 
         summary.append({
