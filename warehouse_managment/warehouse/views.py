@@ -203,14 +203,6 @@ def mark_delivery_received(request):
         )
         response.raise_for_status()
 
-        InventoryTransaction.objects.create(
-            inventory=inventory,
-            transaction_type='INCOMING' if status_flag == "received" else 'RETURNED',
-            quantity_change=quantity,
-            reference_number=f"{status_flag.upper()}-{request_id}",
-            notes=note,
-            created_by=f"Warehouse {warehouse_id}"
-        )
         
     except requests.RequestException as e:
         return Response({
@@ -218,6 +210,14 @@ def mark_delivery_received(request):
             "details": str(e)
         }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
+    InventoryTransaction.objects.create(
+        inventory=inventory,
+        transaction_type='INCOMING' if status_flag == "received" else 'RETURNED',
+        quantity_change=quantity,
+        reference_number=f"{status_flag.upper()}-{request_id}",
+        notes=note,
+        created_by=f"Warehouse {warehouse_id}"
+    )
     return Response({"status": f"Delivery {status_flag} and processed successfully."}, status=status.HTTP_200_OK)
 
 
