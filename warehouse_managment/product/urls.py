@@ -25,7 +25,8 @@ urlpatterns = [
 
     # Supplier product endpoints
     path('supplier-products/', supplier_product_list, name='supplier-product-list'),
-    
+
+    # Change the Supplier's maximum capacity to a new value
     path('supplier-products/update/', update_supplier_product, name='update-supplier-product'),
     
     # Product count endpoint

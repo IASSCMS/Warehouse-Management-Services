@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Warehouse, WarehouseInventory, InventoryTransaction, WarehouseSupplier
+from .models import Warehouse, WarehouseInventory, InventoryTransaction, SupplierProduct
 
 class WarehouseSerializer(serializers.ModelSerializer):
     class Meta:
@@ -11,12 +11,13 @@ class WarehouseInventorySerializer(serializers.ModelSerializer):
         model = WarehouseInventory
         fields = '__all__'
 
+class SupplierProductSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = SupplierProduct
+        fields = '__all__'
+
 class InventoryTransactionSerializer(serializers.ModelSerializer):
     class Meta:
         model = InventoryTransaction
         fields = '__all__'
-        
-class WarehouseSupplierSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = WarehouseSupplier
-        fields = ['id', 'name', 'location']
+    

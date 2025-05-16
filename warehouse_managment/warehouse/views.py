@@ -5,10 +5,10 @@ from rest_framework import status
 from django.utils import timezone
 from decimal import Decimal
 from collections import defaultdict
-from product.models import Product, SupplierProduct, ProductCategory
+from product.models import Product, ProductCategory
 from django.db.models import Sum, F
 from django.db import transaction
-from .models import Warehouse, WarehouseInventory, InventoryTransaction, WarehouseSupplier
+from .models import Warehouse, WarehouseInventory, InventoryTransaction, SupplierProduct
 from .utils.supplier_names import SUPPLIER_NAME_MAP
 from .utils.mock_orders import ORDERS
 from .utils.order_accept_Req import ORDER_REQUEST

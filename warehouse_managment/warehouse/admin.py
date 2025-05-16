@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Warehouse, WarehouseInventory, InventoryTransaction, WarehouseSupplier
+from .models import Warehouse, WarehouseInventory, InventoryTransaction, SupplierProduct
 
 @admin.register(Warehouse)
 class WarehouseAdmin(admin.ModelAdmin):
@@ -15,7 +15,9 @@ class InventoryTransactionAdmin(admin.ModelAdmin):
     list_display = ('id', 'inventory', 'transaction_type', 'quantity_change', 'created_at', 'created_by')
     list_filter = ('transaction_type', 'created_by')
 
-@admin.register(WarehouseSupplier)
-class WarehouseSupplierAdmin(admin.ModelAdmin):
-    list_display = ('id', 'warehouse', 'supplier_id')
-    list_filter = ('warehouse',)
+@admin.register(SupplierProduct)
+class SupplierProductAdmin(admin.ModelAdmin):
+    list_display = ('id', 'supplier_id', 'product', 'warehouse', 'maximum_capacity', 'supplier_price', 'lead_time_days')
+    list_filter = ('warehouse', 'supplier_id')
+    search_fields = ('supplier_id', 'product__product_name')
+    

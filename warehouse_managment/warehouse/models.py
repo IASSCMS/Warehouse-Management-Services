@@ -45,12 +45,19 @@ class InventoryTransaction(models.Model):
     created_by = models.CharField(max_length=100)
     class Meta:
         db_table = 'inventory_transactions'
-
-class WarehouseSupplier(models.Model):
-    warehouse = models.ForeignKey(Warehouse, on_delete=models.CASCADE)
+        
+    
+class SupplierProduct(models.Model):
     supplier_id = models.IntegerField()
+    product = models.ForeignKey(Product, on_delete=models.CASCADE)
+    warehouse = models.ForeignKey(Warehouse, on_delete=models.CASCADE)  
+    maximum_capacity = models.IntegerField()
+    supplier_price = models.DecimalField(max_digits=10, decimal_places=2)
+    lead_time_days = models.IntegerField(blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        db_table = 'warehouse_supplier'
-        unique_together = (('warehouse', 'supplier_id'),)
-        
+        db_table = 'supplier_product'
+        unique_together = (('supplier_id', 'product', 'warehouse'),)  
+
+
