@@ -44,7 +44,8 @@ urlpatterns = [
     
     # POST endpoint to accept or reject an order request and update inventory
     path('order/handle/', handle_order_status, name='handle_order_status'),
-    # POST endpoint to add or update a supplier product
+    
+    # POST endpoint to add a supplier product enrty or update an existing one with supplier_price, lead_time_days or maximum_stock
     path("/supplier-product/add_or_update/", add_supplier_product, name="update_supplier_product"),
     
     # GET endpoint to get supplier product prices
